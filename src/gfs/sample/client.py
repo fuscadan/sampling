@@ -1,6 +1,6 @@
 import click
 
-from sample.infer import mock_infer
+from gfs.sample.infer import mock_infer
 
 
 @click.group()

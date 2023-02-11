@@ -2,7 +2,7 @@ import os
 
 import yaml
 
-from constants import DIRECTORY_CONFIGS
+from gfs.constants import DIRECTORY_CONFIGS
 
 
 def mock_infer(config: str) -> None:
