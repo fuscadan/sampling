@@ -14,7 +14,7 @@ Gradient-free sampling techniques
    $ source .venv/bin/activate  
    ```
 
-   Make sure your IDE is using the Python interpreter of the venv. In VSCode, bring up VSCode preferences, e.g. with `shift + command + P`, search for `Python: Select Interpreter`, and enter the path to the interpreter: `./sampling/.venv/bin/python3.11`.
+   Make sure your IDE is using the Python interpreter of the venv. In VSCode, bring up VSCode preferences, e.g. with `shift + command + P`, search for `Python: Select Interpreter`, and enter the path to the interpreter: `./sampling/.venv/bin/python3.11` (or wherever you stored your venv files).
 
 3. Update pip:  
    ```  
