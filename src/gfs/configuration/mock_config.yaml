@@ -1,0 +1,12 @@
+tree_name: my_first_tree
+leaves:
+  - sides:
+      - endpoint: 0
+        bitdepth: 2
+      - endpoint: 6
+        bitdepth: 1
+    multiplicity: 0
+  - sides:
+      - endpoint: 3
+        bitdepth: 2
+    multiplicity: 1
