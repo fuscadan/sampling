@@ -100,3 +100,14 @@ class Tree:
 
     def sample(self, n_samples: int) -> list[tuple[int, ...]]:
         return [self._sample_once() for i in range(0, n_samples)]
+
+    def histogram(self, n_samples: int) -> dict[tuple[int, ...], int]:
+        histogram: dict[tuple[int, ...], int] = dict()
+        for i in range(0, n_samples):
+            sample = self._sample_once()
+            if isinstance(histogram.get(sample), int):
+                histogram[sample] += 1
+            else:
+                histogram[sample] = 1
+
+        return histogram
