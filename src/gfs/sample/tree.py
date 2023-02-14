@@ -6,11 +6,23 @@ SAMPLING_MAX_RETRIES = 100000
 
 class Label(NamedTuple):
     value: int
+    bit_depth: int
 
-    def pop_bits(self, n_bits: int) -> tuple[Self, Self]:
+    @property
+    def binary(self) -> str:
+        unpadded_string = bin(self.value).split("b")[1]
+        leading_zeros = "0" * (self.bit_depth - len(unpadded_string))
+        return leading_zeros + unpadded_string
+
+    def pop_right(self, n_bits: int) -> tuple[Self, Self]:
         left = self.value >> n_bits
         right = self.value - (left << n_bits)
-        return Label(left), Label(right)
+        return Label(left, self.bit_depth - n_bits), Label(right, n_bits)
+
+    def pop_left(self, n_bits: int) -> tuple[Self, Self]:
+        left = self.value >> self.bit_depth - n_bits
+        right = self.value - (left << self.bit_depth - n_bits)
+        return Label(left, n_bits), Label(right, self.bit_depth - n_bits)
 
 
 class Side(NamedTuple):
@@ -36,7 +48,7 @@ class Leaf(NamedTuple):
     def get_block_coordinates(self, label_block: Label) -> tuple[int, ...]:
         coordinate_list: list[int] = list()
         for side in self.sides:
-            label_block, shift = label_block.pop_bits(n_bits=side.bit_depth)
+            label_block, shift = label_block.pop_left(n_bits=side.bit_depth)
             coordinate_list.append(side.get_coordinate(shift))
         return tuple(coordinate_list)
 
@@ -59,34 +71,27 @@ class Tree:
         return n_total_blocks.bit_length()
 
     def _label_leaves(self, leaves: list[Leaf]) -> dict[Label, Leaf]:
-        leaves_by_bit_depth: dict[int, list[Leaf]] = dict()
-        for leaf in leaves:
-            if isinstance(leaves_by_bit_depth.get(leaf.bit_depth), list):
-                leaves_by_bit_depth[leaf.bit_depth].append(leaf)
-            else:
-                leaves_by_bit_depth[leaf.bit_depth] = [leaf]
+        leaves.sort(key=lambda leaf: leaf.bit_depth, reverse=True)
 
         leaves_labeled: dict[Label, Leaf] = dict()
-        value: int = 0
-        bit_depths_present = list(leaves_by_bit_depth.keys())
-        bit_depths_present.sort(reverse=True)
-        for i in range(len(bit_depths_present) - 1):
-            for leaf in leaves_by_bit_depth[bit_depths_present[i]]:
-                leaves_labeled[Label(value)] = leaf
-                value += 1
-            value = value << bit_depths_present[i] - bit_depths_present[i + 1]
-        for leaf in leaves_by_bit_depth[bit_depths_present[-1]]:
-            leaves_labeled[Label(value)] = leaf
-            value += 1
+        last_bit_depth_leaf: int = self.depth
+        last_label: int = -1
+        for leaf in leaves:
+            bit_depth_leaf = leaf.bit_depth
+            bit_depth_label = self.depth - bit_depth_leaf
+            label = (last_label + 1) << (last_bit_depth_leaf - bit_depth_leaf)
+            leaves_labeled[Label(label, bit_depth_label)] = leaf
+            last_bit_depth_leaf = bit_depth_leaf
+            last_label = label
 
         return leaves_labeled
 
     def _sample_once(self) -> tuple[int, ...]:
         for n in range(0, SAMPLING_MAX_RETRIES):
-            label: Label = Label(randrange(1 << self.depth))
+            label: Label = Label(randrange(1 << self.depth), self.depth)
 
-            for i in range(self.depth, 0, -1):
-                label_leaf, label_block = label.pop_bits(n_bits=i - 1)
+            for i in range(0, self.depth):
+                label_leaf, label_block = label.pop_left(n_bits=i + 1)
                 leaf = self.leaves_labeled.get(label_leaf)
                 if leaf is not None:
                     return leaf.get_block_coordinates(label_block)
