@@ -48,7 +48,7 @@ class Leaf(NamedTuple):
     def get_block_coordinates(self, label_block: Label) -> tuple[int, ...]:
         coordinate_list: list[int] = list()
         for side in self.sides:
-            label_block, shift = label_block.pop_left(n_bits=side.bit_depth)
+            shift, label_block = label_block.pop_left(n_bits=side.bit_depth)
             coordinate_list.append(side.get_coordinate(shift))
         return tuple(coordinate_list)
 
