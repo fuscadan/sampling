@@ -1,26 +1,27 @@
 from itertools import product
 
-from gfs.sample.tree import Leaf, Side, Tree
+from gfs.sample.tree import Leaf, Side
 
 
-def extend(tree: Tree, bit_depth: int, axis: int | None = None) -> Tree:
-    leaves: list[Leaf] = list(tree.leaves_labeled.values())
+def extend(leaves: list[Leaf], bit_depth: int, axis: int | None = None) -> None:
     if axis is None:
         axis = len(leaves)
     for leaf in leaves:
         leaf.sides.insert(axis, Side(endpoint=0, bit_depth=bit_depth))
-    return Tree(leaves)
 
 
-def restrict(tree: Tree, value: int, axis: int) -> Tree:
-    leaves: list[Leaf] = list(tree.leaves_labeled.values())
-    leaves_restricted: list[Leaf] = list()
-    for leaf in leaves:
+def restrict(leaves: list[Leaf], value: int, axis: int) -> None:
+    to_pop: list[int] = list()
+    for i, leaf in enumerate(leaves):
         side = leaf.sides[axis]
         if value in range(side.endpoint, side.endpoint + (1 << side.bit_depth)):
             _ = leaf.sides.pop(axis)
-            leaves_restricted.append(leaf)
-    return Tree(leaves_restricted)
+        else:
+            to_pop.append(i)
+
+    to_pop.reverse()
+    for i in to_pop:
+        _ = leaves.pop(i)
 
 
 def _line_segment_to_list_of_sides(endpoint: int, length: int) -> list[Side]:
@@ -63,12 +64,9 @@ def _intersect_leaves(l1: Leaf, l2: Leaf) -> list[Leaf]:
     return leaves
 
 
-def multiply(tree_left: Tree, tree_right: Tree) -> Tree:
-    leaves_left: list[Leaf] = list(tree_left.leaves_labeled.values())
-    leaves_right: list[Leaf] = list(tree_right.leaves_labeled.values())
-
+def multiply(leaves_left: list[Leaf], leaves_right: list[Leaf]) -> list[Leaf]:
     leaves: list[Leaf] = list()
     for l1, l2 in product(leaves_left, leaves_right):
         leaves.extend(_intersect_leaves(l1, l2))
 
-    return Tree(leaves)
+    return leaves
