@@ -33,9 +33,13 @@ class Side(NamedTuple):
         return self.endpoint + shift.value
 
 
-class Leaf(NamedTuple):
-    multiplicity: int
-    sides: list[Side]
+class Leaf:
+    def __init__(self, multiplicity: int, sides: list[Side]) -> None:
+        self.multiplicity = multiplicity
+        self.sides = sides
+
+    def __repr__(self) -> str:
+        return f"Leaf(multiplicity={self.multiplicity}, sides={self.sides})"
 
     @property
     def bit_depth(self) -> int:
