@@ -24,6 +24,21 @@ def restrict(leaves: list[Leaf], value: int, axis: int) -> None:
         _ = leaves.pop(i)
 
 
+def drop_small(leaves: list[Leaf], bit_depth: int) -> None:
+    to_pop: list[int] = [
+        i for i in range(len(leaves)) if leaves[i].bit_depth <= bit_depth
+    ]
+    to_pop.reverse()
+    for i in to_pop:
+        _ = leaves.pop(i)
+
+
+def reduce_multiplicity(leaves: list[Leaf]) -> None:
+    min_multiplicity: int = min([leaf.multiplicity for leaf in leaves])
+    for leaf in leaves:
+        leaf.multiplicity -= min_multiplicity
+
+
 def _line_segment_to_list_of_sides(endpoint: int, length: int) -> list[Side]:
     sides: list[Side] = list()
     if length <= 0:
