@@ -1,42 +1,6 @@
 from itertools import product
 
-from gfs.sample.tree import Leaf, Side
-
-
-def extend(leaves: list[Leaf], bit_depth: int, axis: int | None = None) -> None:
-    if axis is None:
-        axis = len(leaves)
-    for leaf in leaves:
-        leaf.sides.insert(axis, Side(endpoint=0, bit_depth=bit_depth))
-
-
-def restrict(leaves: list[Leaf], value: int, axis: int) -> None:
-    to_pop: list[int] = list()
-    for i, leaf in enumerate(leaves):
-        side = leaf.sides[axis]
-        if value in range(side.endpoint, side.endpoint + (1 << side.bit_depth)):
-            _ = leaf.sides.pop(axis)
-        else:
-            to_pop.append(i)
-
-    to_pop.reverse()
-    for i in to_pop:
-        _ = leaves.pop(i)
-
-
-def drop_small(leaves: list[Leaf], bit_depth: int) -> None:
-    to_pop: list[int] = [
-        i for i in range(len(leaves)) if leaves[i].bit_depth <= bit_depth
-    ]
-    to_pop.reverse()
-    for i in to_pop:
-        _ = leaves.pop(i)
-
-
-def reduce_multiplicity(leaves: list[Leaf]) -> None:
-    min_multiplicity: int = min([leaf.multiplicity for leaf in leaves])
-    for leaf in leaves:
-        leaf.multiplicity -= min_multiplicity
+from gfs.sample.leaf import Leaf, LeafList, Side
 
 
 def _line_segment_to_list_of_sides(endpoint: int, length: int) -> list[Side]:
@@ -79,87 +43,9 @@ def _intersect_leaves(l1: Leaf, l2: Leaf) -> list[Leaf]:
     return leaves
 
 
-def multiply(leaves_left: list[Leaf], leaves_right: list[Leaf]) -> list[Leaf]:
-    leaves: list[Leaf] = list()
+def multiply(leaves_left: LeafList, leaves_right: LeafList) -> LeafList:
+    leaf_list: list[Leaf] = list()
     for l1, l2 in product(leaves_left, leaves_right):
-        leaves.extend(_intersect_leaves(l1, l2))
+        leaf_list.extend(_intersect_leaves(l1, l2))
 
-    return leaves
-
-
-def _can_combine_on_side(leaf_1: Leaf, leaf_2: Leaf, axis: int) -> bool:
-    if leaf_1.bit_depth != leaf_2.bit_depth:
-        return False
-
-    l1_l_endpoint = leaf_1.sides[axis].endpoint
-    l1_r_endpoint = l1_l_endpoint + (1 << leaf_1.sides[axis].bit_depth)
-    l2_l_endpoint = leaf_2.sides[axis].endpoint
-    l2_r_endpoint = l2_l_endpoint + (1 << leaf_2.sides[axis].bit_depth)
-
-    if (l1_l_endpoint != l2_r_endpoint) and (l1_r_endpoint != l2_l_endpoint):
-        return False
-
-    for i in [j for j in range(len(leaf_1.sides)) if j != axis]:
-        if leaf_1.sides[i] != leaf_2.sides[i]:
-            return False
-
-    return True
-
-
-def _combine_pair_on_side(leaf_1: Leaf, leaf_2: Leaf, axis: int) -> None:
-    l1_l_endpoint = leaf_1.sides[axis].endpoint
-    l2_l_endpoint = leaf_2.sides[axis].endpoint
-    l2_r_endpoint = l2_l_endpoint + (1 << leaf_2.sides[axis].bit_depth)
-
-    if l1_l_endpoint == l2_r_endpoint:
-        endpoint = l2_l_endpoint
-    else:
-        endpoint = l1_l_endpoint
-
-    bit_depth = leaf_1.sides[axis].bit_depth + 1
-    leaf_1.sides[axis] = Side(endpoint=endpoint, bit_depth=bit_depth)
-
-
-def combine_leaves_on_side(leaves: list[Leaf], axis: int) -> None:
-    to_pop: list[int] = list()
-    for i, leaf_1 in enumerate(leaves):
-        if i in to_pop:
-            continue
-        for j, leaf_2 in enumerate(leaves[(i + 1) :]):
-            if not _can_combine_on_side(leaf_1=leaf_1, leaf_2=leaf_2, axis=axis):
-                continue
-            _combine_pair_on_side(leaf_1=leaf_1, leaf_2=leaf_2, axis=axis)
-            to_pop.append(i + 1 + j)
-            break
-
-    to_pop.sort(reverse=True)
-    for i in to_pop:
-        _ = leaves.pop(i)
-
-
-def _can_combine_on_multiplicity(leaf_1: Leaf, leaf_2: Leaf) -> bool:
-    if leaf_1.bit_depth != leaf_2.bit_depth:
-        return False
-
-    for i in range(len(leaf_1.sides)):
-        if leaf_1.sides[i] != leaf_2.sides[i]:
-            return False
-
-    return True
-
-
-def combine_leaves_on_multiplicity(leaves: list[Leaf]) -> None:
-    to_pop: list[int] = list()
-    for i, leaf_1 in enumerate(leaves):
-        if i in to_pop:
-            continue
-        for j, leaf_2 in enumerate(leaves[(i + 1) :]):
-            if not _can_combine_on_multiplicity(leaf_1=leaf_1, leaf_2=leaf_2):
-                continue
-            leaf_1.multiplicity += 1
-            to_pop.append(i + 1 + j)
-            break
-
-    to_pop.sort(reverse=True)
-    for i in to_pop:
-        _ = leaves.pop(i)
+    return LeafList(leaf_list)
