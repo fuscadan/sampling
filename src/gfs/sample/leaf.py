@@ -1,5 +1,7 @@
 from typing import NamedTuple, Self
 
+MAX_COMBINE_ATTEMPTS = 100
+
 
 class Label(NamedTuple):
     value: int
@@ -164,3 +166,25 @@ class LeafList(list[Leaf]):
         to_pop.sort(reverse=True)
         for i in to_pop:
             _ = self.pop(i)
+
+    def combine(self) -> None:
+        if len(self) == 0:
+            return None
+
+        for i in range(MAX_COMBINE_ATTEMPTS):
+            length_leaves_epic = len(self)
+            for j in range(MAX_COMBINE_ATTEMPTS):
+                length_leaves: int = len(self)
+                self.combine_on_multiplicity()
+                if len(self) == length_leaves:
+                    break
+
+            for axis in range(len(self[0].sides)):
+                for j in range(MAX_COMBINE_ATTEMPTS):
+                    length_leaves: int = len(self)
+                    self.combine_on_side(axis)
+                    if len(self) == length_leaves:
+                        break
+
+            if len(self) == length_leaves_epic:
+                break
