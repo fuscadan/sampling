@@ -8,3 +8,7 @@ __pycache__/
 
 # distribution / packaging
 *.egg-info/
+
+# dev
+*.csv
+scrap.py

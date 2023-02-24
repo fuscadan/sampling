@@ -1,60 +1,12 @@
 from random import randrange
-from typing import NamedTuple, Self
+
+from gfs.sample.leaf import Label, Leaf, LeafList
 
 SAMPLING_MAX_RETRIES = 100000
 
 
-class Label(NamedTuple):
-    value: int
-    bit_depth: int
-
-    @property
-    def binary(self) -> str:
-        unpadded_string = bin(self.value).split("b")[1]
-        leading_zeros = "0" * (self.bit_depth - len(unpadded_string))
-        return leading_zeros + unpadded_string
-
-    def pop_right(self, n_bits: int) -> tuple[Self, Self]:
-        left = self.value >> n_bits
-        right = self.value - (left << n_bits)
-        return Label(left, self.bit_depth - n_bits), Label(right, n_bits)
-
-    def pop_left(self, n_bits: int) -> tuple[Self, Self]:
-        left = self.value >> self.bit_depth - n_bits
-        right = self.value - (left << self.bit_depth - n_bits)
-        return Label(left, n_bits), Label(right, self.bit_depth - n_bits)
-
-
-class Side(NamedTuple):
-    endpoint: int
-    bit_depth: int
-
-    def get_coordinate(self, shift: Label) -> int:
-        return self.endpoint + shift.value
-
-
-class Leaf(NamedTuple):
-    multiplicity: int
-    sides: list[Side]
-
-    @property
-    def bit_depth(self) -> int:
-        return sum([side.bit_depth for side in self.sides]) + self.multiplicity
-
-    @property
-    def n_blocks(self) -> int:
-        return 1 << self.bit_depth
-
-    def get_block_coordinates(self, label_block: Label) -> tuple[int, ...]:
-        coordinate_list: list[int] = list()
-        for side in self.sides:
-            label_block, shift = label_block.pop_left(n_bits=side.bit_depth)
-            coordinate_list.append(side.get_coordinate(shift))
-        return tuple(coordinate_list)
-
-
 class Tree:
-    def __init__(self, leaves: list[Leaf]) -> None:
+    def __init__(self, leaves: LeafList) -> None:
         self._depth: int = self._compute_required_depth(leaves)
         self._leaves_labeled: dict[Label, Leaf] = self._label_leaves(leaves)
 
@@ -66,11 +18,11 @@ class Tree:
     def leaves_labeled(self) -> dict[Label, Leaf]:
         return self._leaves_labeled
 
-    def _compute_required_depth(self, leaves: list[Leaf]) -> int:
+    def _compute_required_depth(self, leaves: LeafList) -> int:
         n_total_blocks = sum([leaf.n_blocks for leaf in leaves])
         return n_total_blocks.bit_length()
 
-    def _label_leaves(self, leaves: list[Leaf]) -> dict[Label, Leaf]:
+    def _label_leaves(self, leaves: LeafList) -> dict[Label, Leaf]:
         leaves.sort(key=lambda leaf: leaf.bit_depth, reverse=True)
 
         leaves_labeled: dict[Label, Leaf] = dict()
