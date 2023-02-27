@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import NamedTuple
 
 from gfs.sample.algebra import multiply
-from gfs.sample.distributions import Linear, Uniform
+from gfs.sample.functions import constant, linear
 from gfs.sample.histogram import Histogram
 from gfs.sample.leaf import LeafList
 from gfs.sample.tree import Tree
@@ -65,11 +65,9 @@ class BinomialLikelihood(Likelihood):
 
     def leaves(self, datum: DataPoint) -> LeafList:
         if datum.value[0] == 0:
-            return Linear(
-                domain_bit_depth=self.domain_bit_depth, reverse=False
-            ).leaves()
+            return linear(domain_bit_depth=self.domain_bit_depth, reverse=False)
         if datum.value[0] == 1:
-            return Linear(domain_bit_depth=self.domain_bit_depth, reverse=True).leaves()
+            return linear(domain_bit_depth=self.domain_bit_depth, reverse=True)
 
         raise ValueError(f"Invalid datum: {datum}")
 
@@ -79,4 +77,4 @@ class UniformPrior(Prior):
         super().__init__(domain_bit_depth=domain_bit_depth)
 
     def _get_initial_leaves(self) -> LeafList:
-        return Uniform(domain_bit_depth=self.domain_bit_depth).leaves()
+        return constant(domain_bit_depth=self.domain_bit_depth)
