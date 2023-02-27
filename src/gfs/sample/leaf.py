@@ -57,7 +57,7 @@ class Leaf:
 
 
 class LeafList(list[Leaf]):
-    def extend(self, bit_depth: int, axis: int | None = None) -> None:
+    def extend_domain(self, bit_depth: int, axis: int | None = None) -> None:
         if axis is None:
             axis = len(self)
         for leaf in self:

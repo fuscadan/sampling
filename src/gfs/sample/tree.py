@@ -1,5 +1,6 @@
 from random import randrange
 
+from gfs.sample.histogram import Histogram
 from gfs.sample.leaf import Label, Leaf, LeafList
 
 SAMPLING_MAX_RETRIES = 100000
@@ -53,7 +54,7 @@ class Tree:
     def sample(self, n_samples: int) -> list[tuple[int, ...]]:
         return [self._sample_once() for i in range(0, n_samples)]
 
-    def histogram(self, n_samples: int) -> dict[tuple[int, ...], int]:
+    def histogram(self, n_samples: int) -> Histogram:
         histogram: dict[tuple[int, ...], int] = dict()
         for i in range(0, n_samples):
             sample = self._sample_once()
@@ -62,4 +63,4 @@ class Tree:
             else:
                 histogram[sample] = 1
 
-        return histogram
+        return Histogram(histogram)

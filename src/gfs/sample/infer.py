@@ -1,14 +1,17 @@
-import os
-
-import yaml
-
-from gfs.constants import DIRECTORY_CONFIGS
+from gfs.sample.bayes import Likelihood, Prior
+from gfs.sample.utils import load_data
 
 
-def mock_infer(config: str) -> None:
-    """placeholder for the main function called by the client"""
-    file_path = os.path.join(DIRECTORY_CONFIGS, f"{config}.yaml")
-    with open(file_path) as f:
-        config_dict = yaml.safe_load(f)
-
-    print(config_dict)
+def infer_parameters(
+    project: str,
+    likelihood: Likelihood,
+    prior: Prior,
+    n_data_points: int,
+    n_samples: int,
+    data_file: str,
+    output_file: str,
+) -> None:
+    data = load_data(project=project, file=data_file)
+    posterior = prior.update(likelihood=likelihood, data=data[:n_data_points])
+    histogram = posterior.histogram(n_samples=n_samples)
+    histogram.export(project=project, file=output_file, axis=0)

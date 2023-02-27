@@ -12,3 +12,6 @@ __pycache__/
 # dev
 *.csv
 scrap.py
+
+# macOS
+.DS_Store
