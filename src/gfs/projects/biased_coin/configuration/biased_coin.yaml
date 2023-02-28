@@ -3,6 +3,7 @@ tag: bias-36-64
 likelihood: binomial
 prior: uniform
 domain_bit_depth: 5
+bit_depth_range: 100
 n_data_points: 10
-n_samples: 10000
+n_samples: 100000
 data_file: biased-coin_bias-36-64_trials-150.csv

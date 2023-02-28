@@ -11,6 +11,7 @@ REQUIRED_KWARGS_CLI_INFER = [
     "likelihood",
     "prior",
     "domain_bit_depth",
+    "bit_depth_range",
     "n_data_points",
     "n_samples",
     "data_file",
@@ -72,8 +73,9 @@ def _process_kwargs_infer(kwargs: dict[str, Any]) -> dict[str, Any]:
 
     # build Likelihood and Prior objects
     domain_bit_depth = processed["domain_bit_depth"]
+    bit_depth_range = processed["bit_depth_range"]
     likelihood = LIKELIHOODS[processed["likelihood"]](domain_bit_depth)
-    prior = PRIORS[processed["prior"]](domain_bit_depth)
+    prior = PRIORS[processed["prior"]](domain_bit_depth, bit_depth_range)
     processed["likelihood"] = likelihood
     processed["prior"] = prior
 

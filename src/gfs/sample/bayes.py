@@ -24,6 +24,7 @@ class Posterior:
 
     def histogram(self, n_samples: int) -> Histogram:
         tree = Tree(self.leaves)
+        logger.debug(f"Tree depth: {tree.depth}")
         return tree.histogram(n_samples)
 
 
@@ -37,8 +38,9 @@ class Likelihood(ABC):
 
 
 class Prior(ABC):
-    def __init__(self, domain_bit_depth: int) -> None:
+    def __init__(self, domain_bit_depth: int, bit_depth_range: int) -> None:
         self.domain_bit_depth = domain_bit_depth
+        self.bit_depth_range = bit_depth_range
         self._leaves = self._get_initial_leaves()
 
     @property
@@ -59,6 +61,11 @@ class Prior(ABC):
         for datum in data:
             logger.info(f"Updating prior with datum: {datum}")
             self.leaves = multiply(likelihood.leaves(datum), self.leaves)
+            self.leaves.combine_on_multiplicity()
+            max_bit_depth = max([leaf.bit_depth for leaf in self.leaves])
+            self.leaves.drop_small(bit_depth=max_bit_depth - self.bit_depth_range)
+            self.leaves.reduce_multiplicity()
+            logger.debug(f"Length of leaves: {len(self.leaves)}")
 
         return Posterior(self.leaves)
 
@@ -77,8 +84,10 @@ class BinomialLikelihood(Likelihood):
 
 
 class UniformPrior(Prior):
-    def __init__(self, domain_bit_depth: int) -> None:
-        super().__init__(domain_bit_depth=domain_bit_depth)
+    def __init__(self, domain_bit_depth: int, bit_depth_range: int) -> None:
+        super().__init__(
+            domain_bit_depth=domain_bit_depth, bit_depth_range=bit_depth_range
+        )
 
     def _get_initial_leaves(self) -> LeafList:
         return constant(domain_bit_depth=self.domain_bit_depth)
