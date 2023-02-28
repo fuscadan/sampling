@@ -1,4 +1,5 @@
 import gc
+import logging
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
@@ -7,6 +8,9 @@ from gfs.sample.functions import constant, linear
 from gfs.sample.histogram import Histogram
 from gfs.sample.leaf import LeafList
 from gfs.sample.tree import Tree
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class DataPoint(NamedTuple):
@@ -53,7 +57,7 @@ class Prior(ABC):
 
     def update(self, likelihood: Likelihood, data: list[DataPoint]) -> Posterior:
         for datum in data:
-            print(f"Updating with datum: {datum}")
+            logger.info(f"Updating prior with datum: {datum}")
             self.leaves = multiply(likelihood.leaves(datum), self.leaves)
 
         return Posterior(self.leaves)
