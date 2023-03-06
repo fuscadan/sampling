@@ -101,6 +101,7 @@ def cli() -> None:
 @click.option("--likelihood", type=str)
 @click.option("--prior", type=str)
 @click.option("--domain_bit_depth", type=int)
+@click.option("--bit_depth_range", type=int)
 @click.option("--n_data_points", type=int)
 @click.option("--n_samples", type=int)
 @click.option("--data_file", type=str)
