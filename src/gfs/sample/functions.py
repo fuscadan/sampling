@@ -1,8 +1,9 @@
 from gfs.sample.leaf import Leaf, LeafList, Side
 
 
-def constant(domain_bit_depth: int) -> LeafList:
-    leaf = Leaf(multiplicity=0, sides=[Side(endpoint=0, bit_depth=domain_bit_depth)])
+def constant(domain_bit_depths: list[int]) -> LeafList:
+    sides = [Side(endpoint=0, bit_depth=bit_depth) for bit_depth in domain_bit_depths]
+    leaf = Leaf(multiplicity=0, sides=sides)
     return LeafList([leaf])
 
 
