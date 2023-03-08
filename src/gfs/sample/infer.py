@@ -9,18 +9,19 @@ logger = logging.getLogger(__name__)
 
 def infer_parameters(
     project: str,
-    likelihood: Likelihood,
     prior: Prior,
+    likelihood: Likelihood,
     n_data_points: int,
     n_samples: int,
     data_file: str,
     output_file: str,
+    histogram_axes: list[int],
 ) -> None:
     logger.info(f"Load data from project={project}, file={data_file}")
     data = load_data(project=project, file=data_file)
     logger.info(f"Compute posterior with n_data_points={n_data_points}")
     posterior = prior.update(likelihood=likelihood, data=data[:n_data_points])
     logger.info(f"Generate histogram with n_samples={n_samples}")
-    histogram = posterior.histogram(n_samples=n_samples)
+    histogram = posterior.histogram(n_samples=n_samples, axes=histogram_axes)
     logger.info(f"Export histogram to file={output_file}")
-    histogram.export(project=project, file=output_file, axis=0)
+    histogram.export(project=project, file=output_file)
