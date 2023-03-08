@@ -172,7 +172,7 @@ class LeafList(list[Leaf]):
             return None
 
         for i in range(MAX_COMBINE_ATTEMPTS):
-            length_leaves_epic = len(self)
+            length_leaves_epoch = len(self)
             for j in range(MAX_COMBINE_ATTEMPTS):
                 length_leaves: int = len(self)
                 self.combine_on_multiplicity()
@@ -186,5 +186,5 @@ class LeafList(list[Leaf]):
                     if len(self) == length_leaves:
                         break
 
-            if len(self) == length_leaves_epic:
+            if len(self) == length_leaves_epoch:
                 break
