@@ -4,7 +4,7 @@ import os
 import yaml
 
 from gfs.constants import DIRECTORY_PROJECT_ROOT
-from gfs.sample.bayes import DataPoint
+from gfs.sample.elements import DataPoint
 
 
 def randint(n_bits) -> int:

@@ -1,10 +1,10 @@
 import gc
 import logging
 from abc import ABC, abstractmethod
-from typing import NamedTuple
 
 from gfs.sample.algebra import multiply
 from gfs.sample.domain import Domain
+from gfs.sample.elements import DataPoint
 from gfs.sample.functions import constant, linear
 from gfs.sample.histogram import Histogram
 from gfs.sample.leaf import LeafList
@@ -12,11 +12,6 @@ from gfs.sample.tree import Tree
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-class DataPoint(NamedTuple):
-    id: int
-    value: tuple[int]
 
 
 class Posterior:
