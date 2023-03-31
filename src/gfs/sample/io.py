@@ -3,7 +3,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
-from gfs.sample.elements import DataPoint, PosteriorSamples, PredictiveDists, Sample
+from gfs.sample.elements import DataPoint, Parameter, PosteriorSamples, PredictiveDists
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class ProjectIO:
             reader = csv.reader(f)
             axes = next(reader)
             samples = PosteriorSamples(
-                [Sample([float(item) for item in row]) for row in reader], axes=axes
+                [Parameter([float(item) for item in row]) for row in reader], axes=axes
             )
         logger.info(f"Loaded posterior samples: {posterior_file}")
         return samples

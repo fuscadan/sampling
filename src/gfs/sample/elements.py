@@ -10,10 +10,10 @@ class DataPoint(NamedTuple):
     value: tuple[int, ...]
 
 
-class Sample(tuple[float, ...]):
+class Parameter(tuple[float, ...]):
     def __init__(self, iterable: Iterable):
         if len(self) == 0:
-            raise ValueError("Sample cannot be empty.")
+            raise ValueError("Parameter cannot be empty.")
 
 
 class Distribution(tuple[float, ...]):
@@ -22,12 +22,12 @@ class Distribution(tuple[float, ...]):
             raise ValueError("Distribution must sum to 1.")
 
 
-class Histogram(dict[Sample, int]):
+class Histogram(dict[Parameter, int]):
     def __missing__(self, key):
         return 0
 
 
-class PosteriorSamples(list[Sample]):
+class PosteriorSamples(list[Parameter]):
     def __init__(self, iterable: Iterable, axes: list[str]) -> None:
         list.__init__(self, iterable)
         self.axes = axes
