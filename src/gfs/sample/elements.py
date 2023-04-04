@@ -26,7 +26,7 @@ class Parameter(tuple[float, ...]):
 
 
 class Distribution(tuple[float, ...]):
-    def __init__(self, iterable: Iterable):
+    def __init__(self, iterable: Iterable[float]):
         if round(sum(self), 6) != 1:
             raise ValueError("Distribution must sum to 1.")
 
