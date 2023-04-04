@@ -5,9 +5,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+class XDataPoint(tuple[float, ...]):
+    pass
+
+
+class YDataPoint(tuple[float, ...]):
+    pass
+
+
 class DataPoint(NamedTuple):
     id: int
-    value: tuple[int, ...]
+    x: XDataPoint | None = None
+    y: YDataPoint | None = None
 
 
 class Parameter(tuple[float, ...]):

@@ -3,7 +3,13 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
-from gfs.sample.elements import DataPoint, Parameter, PosteriorSamples, PredictiveDists
+from gfs.sample.elements import (
+    DataPoint,
+    Parameter,
+    PosteriorSamples,
+    PredictiveDists,
+    YDataPoint,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -122,4 +128,4 @@ class ProjectIO:
 
 class BinomialPreprocessor(Preprocessor):
     def process_row(self, row: list[str]) -> DataPoint:
-        return DataPoint(id=int(row[0]), value=(int(row[1]),))
+        return DataPoint(id=int(row[0]), y=YDataPoint([int(row[1])]))
