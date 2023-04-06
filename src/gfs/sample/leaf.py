@@ -32,13 +32,9 @@ class Side(NamedTuple):
         return self.endpoint + shift.value
 
 
-class Leaf:
-    def __init__(self, multiplicity: int, sides: list[Side]) -> None:
-        self.multiplicity = multiplicity
-        self.sides = sides
-
-    def __repr__(self) -> str:
-        return f"Leaf(multiplicity={self.multiplicity}, sides={self.sides})"
+class Leaf(NamedTuple):
+    multiplicity: int
+    sides: list[Side]
 
     @property
     def bit_depth(self) -> int:
@@ -84,107 +80,33 @@ class LeafList(list[Leaf]):
         for i in to_pop:
             _ = self.pop(i)
 
-    def reduce_multiplicity(self) -> None:
-        min_multiplicity: int = min([leaf.multiplicity for leaf in self])
-        for leaf in self:
-            leaf.multiplicity -= min_multiplicity
 
-    @staticmethod
-    def _can_combine_on_side(leaf_1: Leaf, leaf_2: Leaf, axis: int) -> bool:
-        if leaf_1.bit_depth != leaf_2.bit_depth:
-            return False
+def reduce_multiplicity(leaves: LeafList) -> LeafList:
+    min_multiplicity: int = min([leaf.multiplicity for leaf in leaves])
+    return LeafList(
+        [Leaf(leaf.multiplicity - min_multiplicity, leaf.sides) for leaf in leaves]
+    )
 
-        l1_l_endpoint = leaf_1.sides[axis].endpoint
-        l1_r_endpoint = l1_l_endpoint + (1 << leaf_1.sides[axis].bit_depth)
-        l2_l_endpoint = leaf_2.sides[axis].endpoint
-        l2_r_endpoint = l2_l_endpoint + (1 << leaf_2.sides[axis].bit_depth)
 
-        if (l1_l_endpoint != l2_r_endpoint) and (l1_r_endpoint != l2_l_endpoint):
-            return False
-
-        for i in [j for j in range(len(leaf_1.sides)) if j != axis]:
-            if leaf_1.sides[i] != leaf_2.sides[i]:
-                return False
-
-        return True
-
-    @staticmethod
-    def _combine_pair_on_side(leaf_1: Leaf, leaf_2: Leaf, axis: int) -> None:
-        l1_l_endpoint = leaf_1.sides[axis].endpoint
-        l2_l_endpoint = leaf_2.sides[axis].endpoint
-        l2_r_endpoint = l2_l_endpoint + (1 << leaf_2.sides[axis].bit_depth)
-
-        if l1_l_endpoint == l2_r_endpoint:
-            endpoint = l2_l_endpoint
-        else:
-            endpoint = l1_l_endpoint
-
-        bit_depth = leaf_1.sides[axis].bit_depth + 1
-        leaf_1.sides[axis] = Side(endpoint=endpoint, bit_depth=bit_depth)
-
-    def combine_on_side(self, axis: int) -> None:
-        to_pop: list[int] = list()
-        for i, leaf_1 in enumerate(self):
-            if i in to_pop:
-                continue
-            for j, leaf_2 in enumerate(self[(i + 1) :]):
-                if not self._can_combine_on_side(
-                    leaf_1=leaf_1, leaf_2=leaf_2, axis=axis
-                ):
-                    continue
-                self._combine_pair_on_side(leaf_1=leaf_1, leaf_2=leaf_2, axis=axis)
+def combine_on_multiplicity(leaves: LeafList) -> LeafList:
+    to_increase: list[int] = list()
+    to_pop: list[int] = list()
+    for i, leaf_1 in enumerate(leaves):
+        if i in to_pop:
+            continue
+        for j, leaf_2 in enumerate(leaves[(i + 1) :]):
+            if leaf_1 == leaf_2:
+                to_increase.append(i)
                 to_pop.append(i + 1 + j)
                 break
 
-        to_pop.sort(reverse=True)
-        for i in to_pop:
-            _ = self.pop(i)
+    combined_leaves: LeafList = LeafList()
+    for i, leaf in enumerate(leaves):
+        if i in to_pop:
+            continue
+        if i in to_increase:
+            combined_leaves.append(Leaf(leaf.multiplicity + 1, leaf.sides))
+            continue
+        combined_leaves.append(Leaf(leaf.multiplicity, leaf.sides))
 
-    @staticmethod
-    def _can_combine_on_multiplicity(leaf_1: Leaf, leaf_2: Leaf) -> bool:
-        if leaf_1.bit_depth != leaf_2.bit_depth:
-            return False
-
-        for i in range(len(leaf_1.sides)):
-            if leaf_1.sides[i] != leaf_2.sides[i]:
-                return False
-
-        return True
-
-    def combine_on_multiplicity(self) -> None:
-        to_pop: list[int] = list()
-        for i, leaf_1 in enumerate(self):
-            if i in to_pop:
-                continue
-            for j, leaf_2 in enumerate(self[(i + 1) :]):
-                if not self._can_combine_on_multiplicity(leaf_1=leaf_1, leaf_2=leaf_2):
-                    continue
-                leaf_1.multiplicity += 1
-                to_pop.append(i + 1 + j)
-                break
-
-        to_pop.sort(reverse=True)
-        for i in to_pop:
-            _ = self.pop(i)
-
-    def combine(self) -> None:
-        if len(self) == 0:
-            return None
-
-        for i in range(MAX_COMBINE_ATTEMPTS):
-            length_leaves_epoch = len(self)
-            for j in range(MAX_COMBINE_ATTEMPTS):
-                length_leaves: int = len(self)
-                self.combine_on_multiplicity()
-                if len(self) == length_leaves:
-                    break
-
-            for axis in range(len(self[0].sides)):
-                for j in range(MAX_COMBINE_ATTEMPTS):
-                    length_leaves: int = len(self)
-                    self.combine_on_side(axis)
-                    if len(self) == length_leaves:
-                        break
-
-            if len(self) == length_leaves_epoch:
-                break
+    return combined_leaves
