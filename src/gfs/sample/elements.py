@@ -20,7 +20,7 @@ class DataPoint(NamedTuple):
 
 
 class Parameter(tuple[float, ...]):
-    def __init__(self, iterable: Iterable):
+    def __init__(self, iterable: Iterable[float]):
         if len(self) == 0:
             raise ValueError("Parameter cannot be empty.")
 
@@ -37,7 +37,7 @@ class Histogram(dict[Parameter, int]):
 
 
 class PosteriorSamples(list[Parameter]):
-    def __init__(self, iterable: Iterable, axes: list[str]) -> None:
+    def __init__(self, iterable: Iterable[Parameter], axes: list[str]) -> None:
         list.__init__(self, iterable)
         self.axes = axes
 
@@ -50,7 +50,7 @@ class PosteriorSamples(list[Parameter]):
 
 
 class PredictiveDists(list[Distribution]):
-    def __init__(self, iterable: Iterable, categories: list[str]) -> None:
+    def __init__(self, iterable: Iterable[Distribution], categories: list[str]) -> None:
         list.__init__(self, iterable)
         self.categories = categories
 
