@@ -40,24 +40,37 @@ The sampling technique is applied to Bayesian inference problems. As an MVP, I h
    gfs --help  
    ```
 
-## Inferring parameters
+## Setting up a project
 
-1. Inference projects are specified with a yaml config file
-   ```
-   src/gfs/projects/<project_name>/configuration/<config_file>
-   ```
+Projects must have a configuration stored in a TOML file. See `src/gfs/projects/biased_coin.toml` for an example. The configuration specifies filepaths to data and output files, the stastical model to be used, and parameters like the number of posterior samples to take.
 
-2. Data is stored in the directory
-   ```
-   src/gfs/projects/<project_name>/data/<data_file>
-   ```
+It is suggested, but not necessary, that project configuration files be placed in `src/gfs/projects/` and data files be placed in `src/gfs/data/< project_name >`.
 
-3. Parameter inference is performed by calling
-   ```
-   gfs infer --project=<project_name> --config=<config_file>
-   ```
-   The project settings in the config file can be overwritten by passing command line arguments. For example:
-   ```
-   gfs infer --project=biased_coin --config=biased_coin.yaml --n_samples=50000
-   ```
-   See `gfs infer --help` for a list of arguments that may be passed to `infer`.
+## Infering parameters / training a model
+
+The `update_prior` command will use the given training data to update the prior distribution on the model's parameters. The command saves the posterior distribution as a JSON file in a format used by the gradient-free sampling algorithm. 
+```
+gfs < path/to/config.toml > [Options] update_prior [Options]
+```
+
+The posterior can then be sampled to understand the distribution of model parameters or to make predictions, or used as a prior distribution for future updates with more data. The `sample_posterior` command loads the posterior JSON file, samples it a specified number of times, and saves those samples as a CSV.
+```
+gfs < path/to/config.toml > [Options] sample_posterior [Options]
+```
+
+For models with only one or two parameters, it may be useful to view a histogram of the posterior samples to get an idea of the shape of the posterior distribution. Running the `histogram` command will save a histogram as a CSV with the same name as the `posterior_samples` file but with the suffix `__histogram`.
+```
+gfs < path/to/config.toml > [Options] histogram [Options]
+```
+
+## Making predictions
+
+Currently, these tools can train classifier models. Given an input, the model assigns (or "predicts") that input to a category. Two important remarks on making predictions:
+1. A model's "prediction" of the input's category is actually a "predictive distribution" - a probability distribution over the possible categories.
+
+2. The question of which model parameters to use when making a prediction is handled in the Bayesian way; for each set of parameters sampled from a posterior distribution, a predictive distribution is computed, and the final predictive distribution is taken to be the average of the results.
+
+The `predict` command computes the predictive distributions of a set of inputs. The results are stored in a CSV file.
+```
+gfs < path/to/config.toml > [Options] predict [Options]
+```
