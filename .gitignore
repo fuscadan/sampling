@@ -16,3 +16,6 @@ scrap.py
 
 # macOS
 .DS_Store
+
+# legacy
+/legacy
