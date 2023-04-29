@@ -3,7 +3,7 @@ requires = ["setuptools>=65.5.0"]
 
 [project]
 name = "gfs"
-version = "0.0.1"
+version = "0.1.0"
 authors = [{ name = "Daniel Fusca", email = "daniel.fusca@gmail.com" }]
 maintainers = [{ name = "Daniel Fusca", email = "daniel.fusca@gmail.com" }]
 description = "Tool to perform Bayesian inference using a technique that does not require computing the gradient."
@@ -33,4 +33,4 @@ dev = [
 Homepage = "https://github.com/fuscadan/sampling"
 
 [project.scripts]
-gfs = "gfs.sample.client:cli"
+gfs = "gfs.app.client:cli"

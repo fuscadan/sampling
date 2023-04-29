@@ -2,9 +2,8 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from gfs.sample.algebra import multiply
-from gfs.sample.domain import Domain
-from gfs.sample.elements import (
+from gfs.app.domain import Domain
+from gfs.app.elements import (
     DataPoint,
     Distribution,
     Parameter,
@@ -12,6 +11,7 @@ from gfs.sample.elements import (
     PredictiveDists,
     XDataPoint,
 )
+from gfs.sample.algebra import multiply
 from gfs.sample.leaf import LeafList
 from gfs.sample.tree import Tree
 

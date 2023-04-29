@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from gfs.app.bayes import Model
+from gfs.app.elements import DataPoint
 from gfs.constants import LEAF_BIT_DEPTH_RANGE
-from gfs.sample.bayes import Model
-from gfs.sample.elements import DataPoint
 
 
 class Preprocessor(ABC):

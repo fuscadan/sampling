@@ -2,10 +2,9 @@ import argparse
 import logging
 import os
 
-from gfs.constants import VERSION, get_logging_level
-from gfs.sample.bayes import Likelihood, Posterior, Prior, predict, sample, update_prior
-from gfs.sample.elements import DataPoint
-from gfs.sample.io import (
+from gfs.app.bayes import Likelihood, Posterior, Prior, predict, sample, update_prior
+from gfs.app.elements import DataPoint
+from gfs.app.io import (
     export_histogram,
     export_leaves,
     export_prediction,
@@ -15,7 +14,8 @@ from gfs.sample.io import (
     load_project,
     load_samples,
 )
-from gfs.sample.project import Project
+from gfs.app.project import Project
+from gfs.constants import VERSION, get_logging_level
 
 logger = logging.getLogger(__name__)
 

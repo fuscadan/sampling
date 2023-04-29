@@ -1,15 +1,9 @@
-from gfs.sample.bayes import Likelihood, Model, Prior
-from gfs.sample.domain import Axis, Domain
-from gfs.sample.elements import (
-    DataPoint,
-    Distribution,
-    Parameter,
-    XDataPoint,
-    YDataPoint,
-)
+from gfs.app.bayes import Likelihood, Model, Prior
+from gfs.app.domain import Axis, Domain
+from gfs.app.elements import DataPoint, Distribution, Parameter, XDataPoint, YDataPoint
+from gfs.app.project import Preprocessor
 from gfs.sample.functions import constant, linear
 from gfs.sample.leaf import LeafList
-from gfs.sample.project import Preprocessor
 
 
 class BinomialPreprocessor(Preprocessor):

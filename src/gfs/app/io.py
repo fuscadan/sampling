@@ -5,13 +5,13 @@ import os
 import tomllib
 from typing import Any, Type
 
+from gfs.app.bayes import Model
+from gfs.app.domain import Domain
+from gfs.app.elements import DataPoint, Parameter, ParameterSamples, PredictiveDists
+from gfs.app.project import Preprocessor, Project, ProjectIO, ProjectParams
 from gfs.constants import LEAF_BIT_DEPTH_RANGE
 from gfs.models.binomial import BinomialModel, BinomialPreprocessor
-from gfs.sample.bayes import Model
-from gfs.sample.domain import Domain
-from gfs.sample.elements import DataPoint, Parameter, ParameterSamples, PredictiveDists
 from gfs.sample.leaf import Leaf, LeafList, Side
-from gfs.sample.project import Preprocessor, Project, ProjectIO, ProjectParams
 
 logger = logging.getLogger(__name__)
 
