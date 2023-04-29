@@ -1,31 +1,29 @@
-import gc
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 from gfs.sample.algebra import multiply
 from gfs.sample.domain import Domain
-from gfs.sample.elements import DataPoint
-from gfs.sample.functions import constant, linear
-from gfs.sample.histogram import Histogram
+from gfs.sample.elements import (
+    DataPoint,
+    Distribution,
+    Parameter,
+    ParameterSamples,
+    PredictiveDists,
+    XDataPoint,
+)
 from gfs.sample.leaf import LeafList
 from gfs.sample.tree import Tree
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class Posterior:
-    def __init__(self, leaves: LeafList, domain: Domain) -> None:
-        self.leaves = leaves
-        self.domain = domain
+class Prior(LeafList):
+    pass
 
-    def histogram(self, n_samples: int, axes: list[int]) -> Histogram:
-        tree = Tree(self.leaves)
-        logger.debug(f"Tree depth: {tree.depth}")
-        subdomain = Domain([axis for axis in self.domain if axis.id in axes])
-        histogram = Histogram(domain=subdomain)
-        histogram.populate(tree=tree, n_samples=n_samples)
-        return histogram
+
+class Posterior(LeafList):
+    pass
 
 
 class Likelihood(ABC):
@@ -37,58 +35,51 @@ class Likelihood(ABC):
         pass
 
 
-class Prior(ABC):
-    def __init__(self, domain: Domain, leaf_bit_depth_range: int) -> None:
-        self.domain = domain
-        self.leaf_bit_depth_range = leaf_bit_depth_range
-        self._leaves = self._get_initial_leaves()
-
-    @property
-    def leaves(self) -> LeafList:
-        return self._leaves
-
-    @leaves.setter
-    def leaves(self, leaves: LeafList) -> None:
-        del self._leaves
-        gc.collect()
-        self._leaves = leaves
+@dataclass
+class Model(ABC):
+    param_domain: Domain
+    prior: Prior
+    likelihood: Likelihood
+    categories: tuple[str, ...]
 
     @abstractmethod
-    def _get_initial_leaves(self) -> LeafList:
+    def dist(self, param: Parameter, x: XDataPoint | None) -> Distribution:
         pass
 
-    def update(self, likelihood: Likelihood, data: list[DataPoint]) -> Posterior:
-        for datum in data:
-            logger.info(f"Updating prior with datum: {datum}")
-            self.leaves = multiply(likelihood.leaves(datum), self.leaves)
-            self.leaves.combine_on_multiplicity()
-            max_bit_depth = max([leaf.bit_depth for leaf in self.leaves])
-            self.leaves.drop_small(bit_depth=max_bit_depth - self.leaf_bit_depth_range)
-            self.leaves.reduce_multiplicity()
-            logger.debug(f"Length of leaves: {len(self.leaves)}")
 
-        return Posterior(leaves=self.leaves, domain=self.domain)
-
-
-class BinomialLikelihood(Likelihood):
-    def __init__(self, domain: Domain) -> None:
-        super().__init__(domain)
-        if len(domain) != 1:
-            raise ValueError("BinomialLikelihood only defined on 1D domains.")
-        self.domain_bit_depth = domain[0].bit_depth
-
-    def leaves(self, datum: DataPoint) -> LeafList:
-        if datum.value[0] == 0:
-            return linear(domain_bit_depth=self.domain_bit_depth, reverse=False)
-        if datum.value[0] == 1:
-            return linear(domain_bit_depth=self.domain_bit_depth, reverse=True)
-
-        raise ValueError(f"Invalid datum: {datum}")
+def update_prior(
+    prior: Prior,
+    likelihood: Likelihood,
+    data: list[DataPoint],
+    leaf_bit_depth_range: int,
+) -> Posterior:
+    leaves = prior
+    for datum in data:
+        logger.info(f"Updating prior with datum: {datum}")
+        leaves = multiply(likelihood.leaves(datum=datum), leaves, leaf_bit_depth_range)
+        logger.debug(f"Number of leaves: {len(leaves)}")
+    return Posterior(leaves)
 
 
-class UniformPrior(Prior):
-    def __init__(self, domain: Domain, leaf_bit_depth_range: int) -> None:
-        super().__init__(domain=domain, leaf_bit_depth_range=leaf_bit_depth_range)
+def predict(
+    model: Model, parameter_samples: ParameterSamples, x: XDataPoint | None
+) -> PredictiveDists:
+    predictions = PredictiveDists()
+    logger.info(f"Predicting: model={model.__class__.__name__}, x={x}")
+    for parameter in parameter_samples:
+        predictions.append(model.dist(parameter, x))
+    logger.info(f"Average predictive distribution: {predictions.mean}")
+    return predictions
 
-    def _get_initial_leaves(self) -> LeafList:
-        return constant(domain_bit_depths=[axis.bit_depth for axis in self.domain])
+
+def sample(
+    posterior: Posterior, domain: Domain, n_posterior_samples: int
+) -> ParameterSamples:
+    logger.info(f"Sampling posterior: n_posterior_samples={n_posterior_samples}")
+    samples = ParameterSamples()
+    tree = Tree(leaves=posterior)
+    logger.debug(f"Sampling posterior: tree.depth={tree.depth}")
+    logger.debug(f"Sampling posterior: tree.n_blocks={tree.n_blocks}")
+    for i in range(n_posterior_samples):
+        samples.append(Parameter(domain.scale(tree.sample_once())))
+    return samples

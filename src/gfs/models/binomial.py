@@ -1,9 +1,22 @@
-from gfs.models.model import Model
-from gfs.sample.bayes import Likelihood, Prior
+from gfs.sample.bayes import Likelihood, Model, Prior
 from gfs.sample.domain import Axis, Domain
-from gfs.sample.elements import DataPoint, Distribution, Parameter, XDataPoint
+from gfs.sample.elements import (
+    DataPoint,
+    Distribution,
+    Parameter,
+    XDataPoint,
+    YDataPoint,
+)
 from gfs.sample.functions import constant, linear
 from gfs.sample.leaf import LeafList
+from gfs.sample.project import Preprocessor
+
+
+class BinomialPreprocessor(Preprocessor):
+    def process_row(self, row: list[str]) -> DataPoint:
+        id = int(row[0])
+        y = YDataPoint([int(row[1])]) if row[1] != "" else None
+        return DataPoint(id=id, y=y)
 
 
 class BinomialLikelihood(Likelihood):
@@ -15,9 +28,9 @@ class BinomialLikelihood(Likelihood):
 
     def leaves(self, datum: DataPoint) -> LeafList:
         trial_result = datum.y
-        if trial_result == 0:
+        if trial_result == (0,):
             return linear(domain_bit_depth=self.domain.bit_depth, reverse=True)
-        if trial_result == 1:
+        if trial_result == (1,):
             return linear(domain_bit_depth=self.domain.bit_depth, reverse=False)
 
         raise ValueError(f"Invalid datum: {datum}")
@@ -39,6 +52,6 @@ class BinomialModel(Model):
             categories=("tails", "heads"),
         )
 
-    def dist(self, param: Parameter, x: XDataPoint | None) -> Distribution:
+    def dist(self, param: Parameter, x: XDataPoint | None = None) -> Distribution:
         bias_towards_heads = param[0]
         return Distribution([1 - bias_towards_heads, bias_towards_heads])
