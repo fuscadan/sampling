@@ -8,7 +8,6 @@ kwargs = { bit_depth = 5 }
 [params]
 n_data_points = 150
 n_posterior_samples = 100000
-n_predictive_samples = 10000
 leaf_bit_depth_range = 12
 
 [io]
@@ -17,7 +16,7 @@ input_data_file = "src/gfs/data/biased_coin/biased-coin_dummy_input.csv"
 # prior_file = "src/gfs/data/biased_coin/priors/prior__<< project_name >>__<< tags >>.json"
 posterior_file = "src/gfs/data/biased_coin/posteriors/post__<< project_name >>__<< n_data_points >>-data-points.json"
 posterior_samples_file = "src/gfs/data/biased_coin/posteriors/post_samples__<< project_name >>__<< tags >>__<< n_posterior_samples >>.csv"
-prediction_file = "src/gfs/data/biased_coin/predictions/pred__<< project_name >>__<< tags >>__<< n_predictive_samples >>.csv"
+prediction_file = "src/gfs/data/biased_coin/predictions/pred__<< project_name >>__<< tags >>.csv"
 
 [io.preprocessor]
 name = "binomial"

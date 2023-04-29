@@ -147,9 +147,6 @@ def load_project(**kwargs) -> Project:
         n_posterior_samples=(
             kwargs.get("n_posterior_samples") or config_params["n_posterior_samples"]
         ),
-        n_predictive_samples=(
-            kwargs.get("n_predictive_samples") or config_params["n_predictive_samples"]
-        ),
         n_data_points=kwargs.get("n_data_points") or config_params["n_data_points"],
         leaf_bit_depth_range=(
             config_params.get("leaf_bit_depth_range") or LEAF_BIT_DEPTH_RANGE

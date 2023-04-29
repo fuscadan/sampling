@@ -29,7 +29,6 @@ class ProjectIO:
 @dataclass
 class ProjectParams:
     n_posterior_samples: int
-    n_predictive_samples: int
     n_data_points: int
     leaf_bit_depth_range: int = LEAF_BIT_DEPTH_RANGE
 
@@ -48,7 +47,6 @@ class Project:
             "project_name": self.name,
             "tags": "_".join(self.tags),
             "n_posterior_samples": str(self.params.n_posterior_samples),
-            "n_predictive_samples": str(self.params.n_predictive_samples),
             "n_data_points": str(self.params.n_data_points),
         }
 
