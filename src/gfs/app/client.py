@@ -77,9 +77,9 @@ def cli_predict(project: Project) -> None:
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument("config")
 parser.add_argument("--version", action="version", version=VERSION)
 parser.add_argument("--debug", action="store_true")
-parser.add_argument("--config")
 
 subparsers = parser.add_subparsers(required=True)
 
