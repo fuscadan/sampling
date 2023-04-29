@@ -70,7 +70,7 @@ Currently, these tools can train classifier models. Given an input, the model as
 
 2. The question of which model parameters to use when making a prediction is handled in the Bayesian way; for each set of parameters sampled from a posterior distribution, a predictive distribution is computed, and the final predictive distribution is taken to be the average of the results.
 
-The `predict` command computes the predictive distributions of a set of inputs. The results are stored in a CSV file.
+The `predict` command computes the predictive distributions of a set of inputs. The results are stored as a series of CSV files - one for each input. Each CSV file contains one predictive distribution for each posterior sample. As a convenience, the average predictive distribution is printed to the terminal.
 ```
 gfs < path/to/config.toml > [Options] predict [Options]
 ```
