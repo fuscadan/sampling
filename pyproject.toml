@@ -32,7 +32,7 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/fuscadan/sampling"
+Homepage = "https://github.com/fuscadan/sampling"
 
 [project.scripts]
 gfs = "gfs.sample.client:cli"
