@@ -1,131 +1,167 @@
 import csv
+import json
 import logging
 import os
-from abc import ABC, abstractmethod
+import tomllib
+from typing import Any, Type
 
-from gfs.sample.elements import (
-    DataPoint,
-    Parameter,
-    PosteriorSamples,
-    PredictiveDists,
-    YDataPoint,
-)
+from gfs.constants import LEAF_BIT_DEPTH_RANGE
+from gfs.models.binomial import BinomialModel, BinomialPreprocessor
+from gfs.sample.bayes import Model
+from gfs.sample.domain import Domain
+from gfs.sample.elements import DataPoint, Parameter, ParameterSamples, PredictiveDists
+from gfs.sample.leaf import Leaf, LeafList, Side
+from gfs.sample.project import Preprocessor, Project, ProjectIO, ProjectParams
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class Preprocessor(ABC):
-    @abstractmethod
-    def process_row(self, row: list[str]) -> DataPoint:
-        pass
+MODELS: dict[str, Type[Model]] = {
+    "binomial": BinomialModel,
+}
+PREPROCESSORS: dict[str, Type[Preprocessor]] = {
+    "binomial": BinomialPreprocessor,
+}
 
 
-class ProjectIO:
-    def __init__(
-        self,
-        data_file: str,
-        preprocessor: Preprocessor,
-        posterior_file: str,
-        prediction_file: str,
-    ) -> None:
-        self.data_file = data_file
-        self.preprocessor = preprocessor
-        self.posterior_file = posterior_file
-        self.prediction_file = prediction_file
-
-    def __repr__(self) -> str:
-        msg = (
-            "ProjectIO("
-            f"data_file='{self.data_file}', "
-            f"preprocessor='{self.preprocessor}', "
-            f"posterior_file='{self.posterior_file}', "
-            f"prediction_file='{self.prediction_file}')"
-        )
-        return msg
-
-    @staticmethod
-    def _render(input: str, template_values: dict[str, str]) -> str:
-        output = input
-        for k, v in template_values.items():
-            output = output.replace(f"<< {k} >>", v)
-        return output
-
-    def load_data(self) -> list[DataPoint]:
-        with open(self.data_file) as f:
-            reader = csv.reader(f)
-            data = [self.preprocessor.process_row(row) for row in reader]
-        logger.info(f"Loaded data: {self.data_file}")
-        return data
-
-    def load_posterior(self, template_values: dict[str, str]) -> PosteriorSamples:
-        posterior_file = self._render(
-            input=self.posterior_file, template_values=template_values
-        )
-        with open(posterior_file) as f:
-            reader = csv.reader(f)
-            axes = next(reader)
-            samples = PosteriorSamples(
-                [Parameter([float(item) for item in row]) for row in reader], axes=axes
+class LeafDecoder(json.JSONDecoder):
+    def decode(self, s: str) -> LeafList:
+        raw_leaves = super().decode(s)
+        leaves: LeafList = LeafList()
+        for raw_leaf in raw_leaves:
+            leaves.append(
+                Leaf(
+                    multiplicity=raw_leaf[0],
+                    sides=[
+                        Side(endpoint=raw_side[0], bit_depth=raw_side[1])
+                        for raw_side in raw_leaf[1]
+                    ],
+                )
             )
-        logger.info(f"Loaded posterior samples: {posterior_file}")
-        return samples
-
-    def _export(
-        self, filepath: str, data: list[list[float]], header: list[str]
-    ) -> None:
-        filepath_tokens = filepath.split("/")
-        directory = "/".join(filepath_tokens[:-1])
-        file = filepath_tokens[-1]
-
-        os.makedirs(directory, exist_ok=True)
-        filepath = os.path.join(directory, file)
-        with open(filepath, "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(header)
-            for row in data:
-                writer.writerow(row)
-        logger.info(f"Exported file: {filepath}")
-
-    def export_posterior(
-        self, posterior_samples: PosteriorSamples, template_values: dict[str, str]
-    ) -> None:
-        posterior_file = self._render(
-            input=self.posterior_file, template_values=template_values
-        )
-        self._export(
-            filepath=posterior_file,
-            data=[list(sample) for sample in posterior_samples],
-            header=posterior_samples.axes,
-        )
-
-    def export_posterior_histogram(
-        self, posterior_samples: PosteriorSamples, template_values: dict[str, str]
-    ) -> None:
-        posterior_histogram_file = self._render(
-            input=self.posterior_file.replace(".csv", "_histogram.csv"),
-            template_values=template_values,
-        )
-        hist = posterior_samples.histogram
-        self._export(
-            filepath=posterior_histogram_file,
-            data=[list(sample) + [value] for sample, value in hist.items()],
-            header=posterior_samples.axes + ["count"],
-        )
-
-    def export_prediction(
-        self, predictive_dists: PredictiveDists, template_values: dict[str, str]
-    ) -> None:
-        prediction_file = self._render(
-            input=self.prediction_file, template_values=template_values
-        )
-        self._export(
-            filepath=prediction_file,
-            data=[list(predictive_dists.mean)],
-            header=predictive_dists.categories,
-        )
+        return leaves
 
 
-class BinomialPreprocessor(Preprocessor):
-    def process_row(self, row: list[str]) -> DataPoint:
-        return DataPoint(id=int(row[0]), y=YDataPoint([int(row[1])]))
+def _make_dir(filepath: str) -> None:
+    filepath_tokens = filepath.split("/")
+    directory = "/".join(filepath_tokens[:-1])
+    os.makedirs(directory, exist_ok=True)
+
+
+def load_data(data_file: str, preprocessor: Preprocessor) -> list[DataPoint]:
+    with open(data_file, "r") as f:
+        reader = csv.reader(f)
+        data = [preprocessor.process_row(row) for row in reader]
+    logger.info(f"Loaded data: {data_file}")
+    return data
+
+
+def load_leaves(filepath: str) -> LeafList:
+    with open(filepath, "r") as f:
+        leaves: LeafList = json.load(f, cls=LeafDecoder)
+    logger.info(f"Loaded leaves: {filepath}")
+    return leaves
+
+
+def export_leaves(leaves: LeafList, filepath: str) -> None:
+    _make_dir(filepath=filepath)
+    with open(filepath, "w") as f:
+        json.dump(leaves, f)
+    logger.info(f"Exported leaves: {filepath}")
+
+
+def load_samples(filepath: str, header: bool = True) -> ParameterSamples:
+    samples = ParameterSamples()
+    with open(filepath) as f:
+        reader = csv.reader(f)
+        if header:
+            _ = next(reader)
+        for row in reader:
+            float_row = [float(v) for v in row]
+            samples.append(Parameter(float_row))
+    logger.info(f"Loaded samples: {filepath}")
+    return samples
+
+
+def export_samples(samples: ParameterSamples, filepath: str, domain: Domain) -> None:
+    _make_dir(filepath=filepath)
+    with open(filepath, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow([axis.name for axis in domain])
+        for sample in samples:
+            writer.writerow(sample)
+    logger.info(f"Exported samples: {filepath}")
+
+
+def export_histogram(samples: ParameterSamples, filepath: str, domain: Domain) -> None:
+    hist = samples.histogram
+    _make_dir(filepath=filepath)
+    with open(filepath, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow([axis.name for axis in domain] + ["count"])
+        for parameter, count in hist.items():
+            writer.writerow(list(parameter) + [count])
+    logger.info(f"Exported histogram: {filepath}")
+
+
+def export_prediction(
+    predictions: PredictiveDists, filepath: str, categories: tuple[str]
+) -> None:
+    _make_dir(filepath=filepath)
+    with open(filepath, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(categories)
+        writer.writerow(predictions.mean)
+    logger.info(f"Exported prediction: {filepath}")
+
+
+def load_project(**kwargs) -> Project:
+    config_file = kwargs["config"]
+    with open(config_file, "rb") as f:
+        config = tomllib.load(f)
+
+    config_model: dict[str, Any] = config["model"]
+    config_params: dict[str, Any] = config["params"]
+    config_io: dict[str, Any] = config["io"]
+    config_preprocessor: dict[str, Any] = config_io["preprocessor"]
+
+    model_name: str = config_model["name"]
+    model_kwargs: dict[str, Any] = config_model["kwargs"]
+    preprocessor_name: str = config_preprocessor["name"]
+    preprocessor_kwargs: dict[str, Any] = config_preprocessor["kwargs"]
+
+    project_io = ProjectIO(
+        training_data_file=(
+            kwargs.get("training_data_file") or config_io["training_data_file"]
+        ),
+        input_data_file=(kwargs.get("input_data_file") or config_io["input_data_file"]),
+        preprocessor=PREPROCESSORS[preprocessor_name](**preprocessor_kwargs),
+        prior_file=(kwargs.get("prior_file") or config_io.get("prior_file")),
+        posterior_file=kwargs.get("posterior_file") or config_io["posterior_file"],
+        posterior_samples_file=(
+            kwargs.get("posterior_samples_file") or config_io["posterior_samples_file"]
+        ),
+        prediction_file=(kwargs.get("prediction_file") or config_io["prediction_file"]),
+    )
+
+    params = ProjectParams(
+        n_posterior_samples=(
+            kwargs.get("n_posterior_samples") or config_params["n_posterior_samples"]
+        ),
+        n_predictive_samples=(
+            kwargs.get("n_predictive_samples") or config_params["n_predictive_samples"]
+        ),
+        n_data_points=kwargs.get("n_data_points") or config_params["n_data_points"],
+        leaf_bit_depth_range=(
+            config_params.get("leaf_bit_depth_range") or LEAF_BIT_DEPTH_RANGE
+        ),
+    )
+
+    project = Project(
+        name=kwargs.get("name") or config["name"],
+        tags=kwargs.get("tags") or config.get("tags") or [],
+        model=MODELS[model_name](**model_kwargs),
+        io=project_io,
+        params=params,
+    )
+
+    return project
