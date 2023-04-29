@@ -1,7 +1,6 @@
 import logging
 from typing import Iterable, NamedTuple
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -25,22 +24,12 @@ class Parameter(tuple[float, ...]):
             raise ValueError("Parameter cannot be empty.")
 
 
-class Distribution(tuple[float, ...]):
-    def __init__(self, iterable: Iterable[float]):
-        if round(sum(self), 6) != 1:
-            raise ValueError("Distribution must sum to 1.")
-
-
 class Histogram(dict[Parameter, int]):
     def __missing__(self, key):
         return 0
 
 
-class PosteriorSamples(list[Parameter]):
-    def __init__(self, iterable: Iterable[Parameter], axes: list[str]) -> None:
-        list.__init__(self, iterable)
-        self.axes = axes
-
+class ParameterSamples(list[Parameter]):
     @property
     def histogram(self) -> Histogram:
         hist = Histogram()
@@ -49,16 +38,22 @@ class PosteriorSamples(list[Parameter]):
         return hist
 
 
-class PredictiveDists(list[Distribution]):
-    def __init__(self, iterable: Iterable[Distribution], categories: list[str]) -> None:
-        list.__init__(self, iterable)
-        self.categories = categories
+class Distribution(tuple[float, ...]):
+    def __init__(self, iterable: Iterable[float]):
+        if round(sum(self), 6) != 1:
+            raise ValueError("Distribution must sum to 1.")
 
+
+class PredictiveDists(list[Distribution]):
     @property
     def mean(self) -> Distribution:
-        cat_means: list[float] = list()
         n_dists = len(self)
-        for i in range(len(self.categories)):
-            cat_means.append(sum([dist[i] for dist in self]) / n_dists)
+        if n_dists == 0:
+            raise ValueError("Cannot compute mean distribution of empty list.")
 
-        return Distribution(cat_means)
+        category_means: list[float] = list()
+        n_categories = len(self[0])
+        for i in range(n_categories):
+            category_means.append(sum([dist[i] for dist in self]) / n_dists)
+
+        return Distribution(category_means)
