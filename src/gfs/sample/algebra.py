@@ -1,6 +1,12 @@
 from itertools import product
 
-from gfs.sample.leaf import Leaf, LeafList, Side
+from gfs.sample.leaf import (
+    Leaf,
+    LeafList,
+    Side,
+    combine_on_multiplicity,
+    reduce_multiplicity,
+)
 
 
 def _line_segment_to_list_of_sides(endpoint: int, length: int) -> list[Side]:
@@ -43,9 +49,16 @@ def _intersect_leaves(l1: Leaf, l2: Leaf) -> list[Leaf]:
     return leaves
 
 
-def multiply(leaves_left: LeafList, leaves_right: LeafList) -> LeafList:
-    leaf_list: list[Leaf] = list()
+def multiply(
+    leaves_left: LeafList, leaves_right: LeafList, leaf_bit_depth_range: int
+) -> LeafList:
+    leaves = LeafList()
     for l1, l2 in product(leaves_left, leaves_right):
-        leaf_list.extend(_intersect_leaves(l1, l2))
+        leaves.extend(_intersect_leaves(l1, l2))
 
-    return LeafList(leaf_list)
+    leaves = combine_on_multiplicity(leaves)
+    max_bit_depth = max([leaf.bit_depth for leaf in leaves])
+    leaves.drop_small(bit_depth=max_bit_depth - leaf_bit_depth_range)
+    leaves = reduce_multiplicity(leaves)
+
+    return leaves
